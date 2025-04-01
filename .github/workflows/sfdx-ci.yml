@@ -1,0 +1,75 @@
+# GitHub Actions workflow for Salesforce DX CI/CD
+name: Salesforce CI
+
+# Controls when the action will run.
+# Triggers the workflow on push or pull request events but only for the main branch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    container: salesforce/cli:latest-rc # Use the official Salesforce CLI Docker image
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetches all history for all branches and tags
+
+      # Install Salesforce CLI (already included in the container, but good practice if not using the container)
+      # - name: Install Salesforce CLI
+      #   run: |
+      #     npm install sfdx-cli --global
+      #     sfdx --version
+
+      # Authenticate to Dev Hub using JWT
+      # Requires secrets to be configured in GitHub repository settings:
+      # SFDX_AUTH_URL: The sfdx auth url generated using the JWT flow.
+      # OR
+      # SFDX_SERVER_KEY: The private key (.key file content) for JWT authentication.
+      # SFDX_CLIENT_ID: The consumer key of the connected app.
+      # SFDX_HUB_USERNAME: The username of the Dev Hub user.
+      - name: Authenticate Dev Hub
+        run: |
+          # Option 1: Using SFDX_AUTH_URL (Recommended for simplicity if already generated)
+          # echo ${{ secrets.SFDX_AUTH_URL }} > ./SFDX_AUTH_URL.txt
+          # sfdx auth:sfdxurl:store -f ./SFDX_AUTH_URL.txt -a DevHub -d
+          # rm ./SFDX_AUTH_URL.txt
+
+          # Option 2: Using JWT Key components (More secure, key not stored directly)
+          echo ${{ secrets.SFDX_SERVER_KEY }} > ./server.key
+          sfdx auth:jwt:grant --clientid ${{ secrets.SFDX_CLIENT_ID }} --jwtkeyfile ./server.key --username ${{ secrets.SFDX_HUB_USERNAME }} --setdefaultdevhubusername -a DevHub
+          rm ./server.key # Remove the key file after use
+
+      # Validate source code against the Dev Hub (or create/use a scratch org)
+      # Option A: Validate against Dev Hub directly (faster, less comprehensive)
+      - name: Validate Source Code against Dev Hub
+        run: sfdx force:source:deploy --sourcepath force-app --checkonly --testlevel RunLocalTests --targetusername DevHub
+
+      # Option B: Create Scratch Org, Push Source, Run Tests (more thorough)
+      # - name: Create Scratch Org
+      #   run: sfdx force:org:create --definitionfile config/project-scratch-def.json --setalias ciorg --durationdays 1 --setdefaultusername
+      # - name: Push Source to Scratch Org
+      #   run: sfdx force:source:push
+      # - name: Run Apex Tests in Scratch Org
+      #   run: sfdx force:apex:test:run --resultformat human --wait 10 --testlevel RunLocalTests
+      # - name: Delete Scratch Org
+      #   if: always() # Always run this step even if previous steps fail
+      #   run: sfdx force:org:delete --noprompt
+
+      # Add deployment steps here if needed (e.g., deploy to Sandbox on merge to main)
+      # - name: Deploy to Sandbox
+      #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      #   run: |
+      #     # Authenticate to Sandbox (requires additional secrets)
+      #     echo ${{ secrets.SANDBOX_SFDX_AUTH_URL }} > ./SANDBOX_AUTH_URL.txt
+      #     sfdx auth:sfdxurl:store -f ./SANDBOX_AUTH_URL.txt -a MySandbox -d
+      #     rm ./SANDBOX_AUTH_URL.txt
+      #     # Deploy source
+      #     sfdx force:source:deploy --sourcepath force-app --testlevel RunLocalTests --targetusername MySandbox
