@@ -42,7 +42,7 @@ jobs:
       # Validate source code against the Dev Hub (or create/use a scratch org)
       # Option A: Validate against Dev Hub directly (faster, less comprehensive)
       - name: Validate Source Code against Dev Hub
-        run: sf project deploy start --source-dir force-app --check-only --test-level RunLocalTests --target-org DevHub
+        run: sf project deploy validate --source-dir force-app --test-level RunLocalTests --target-org DevHub
 
       # Option B: Create Scratch Org, Push Source, Run Tests (more thorough)
       # - name: Create Scratch Org
