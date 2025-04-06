@@ -14,19 +14,17 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    container: salesforce/cli:latest-rc # Use the official Salesforce CLI Docker image
-
+    # Remove container and install CLI directly instead
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Fetches all history for all branches and tags
 
-      # Install Salesforce CLI (already included in the container, but good practice if not using the container)
-      # - name: Install Salesforce CLI
-      #   run: |
-      #     npm install sfdx-cli --global
-      #     sfdx --version
+      - name: Install Salesforce CLI
+        run: |
+          npm install @salesforce/cli --global
+          sf --version
 
       # Authenticate to Dev Hub using JWT
       # Requires secrets to be configured in GitHub repository settings:
@@ -37,20 +35,14 @@ jobs:
       # SFDX_HUB_USERNAME: The username of the Dev Hub user.
       - name: Authenticate Dev Hub
         run: |
-          # Option 1: Using SFDX_AUTH_URL (Recommended for simplicity if already generated)
           echo ${{ secrets.SFDX_AUTH_URL }} > ./SFDX_AUTH_URL.txt
-          sfdx auth:sfdxurl:store -f ./SFDX_AUTH_URL.txt -a DevHub -d
+          sf org login sfdx-url -f ./SFDX_AUTH_URL.txt -a DevHub -d
           rm ./SFDX_AUTH_URL.txt
-
-          # Option 2: Using JWT Key components (More secure, key not stored directly)
-          # echo ${{ secrets.SFDX_SERVER_KEY }} > ./server.key
-          # sfdx auth:jwt:grant --clientid ${{ secrets.SFDX_CLIENT_ID }} --jwtkeyfile ./server.key --username ${{ secrets.SFDX_HUB_USERNAME }} --setdefaultdevhubusername -a DevHub
-          # rm ./server.key # Remove the key file after use
 
       # Validate source code against the Dev Hub (or create/use a scratch org)
       # Option A: Validate against Dev Hub directly (faster, less comprehensive)
       - name: Validate Source Code against Dev Hub
-        run: sfdx force:source:deploy --sourcepath force-app --checkonly --testlevel RunLocalTests --targetusername DevHub
+        run: sf project deploy start --source-dir force-app --check-only --test-level RunLocalTests --target-org DevHub
 
       # Option B: Create Scratch Org, Push Source, Run Tests (more thorough)
       # - name: Create Scratch Org
