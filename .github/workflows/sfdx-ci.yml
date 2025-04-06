@@ -44,6 +44,11 @@ jobs:
       - name: Validate Source Code against Dev Hub
         run: sf project deploy validate --source-dir force-app --test-level RunLocalTests --target-org DevHub
 
+      # Deploy to Dev Hub when pushed to main branch
+      - name: Deploy to Dev Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: sf project deploy start --source-dir force-app --test-level RunLocalTests --target-org DevHub
+
       # Option B: Create Scratch Org, Push Source, Run Tests (more thorough)
       # - name: Create Scratch Org
       #   run: sfdx force:org:create --definitionfile config/project-scratch-def.json --setalias ciorg --durationdays 1 --setdefaultusername
