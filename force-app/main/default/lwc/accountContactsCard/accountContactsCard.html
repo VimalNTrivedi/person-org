@@ -1,0 +1,192 @@
+<template>
+  <div class="slds-card custom-card">
+    <div class="slds-card__header slds-grid">
+      <header class="slds-media slds-media_center slds-has-flexi-truncate">
+        <div class="slds-media__figure">
+          <lightning-icon
+            icon-name="standard:account"
+            alternative-text="Account"
+            title="Account"
+          ></lightning-icon>
+        </div>
+        <div class="slds-media__body">
+          <h2 class="slds-card__header-title">
+            <span class="slds-text-heading_medium">Account Details</span>
+          </h2>
+        </div>
+        <div class="slds-no-flex">
+          <lightning-button
+            label="Refresh"
+            icon-name="utility:refresh"
+            onclick={handleRefresh}
+            variant="brand"
+          ></lightning-button>
+        </div>
+      </header>
+    </div>
+
+    <div class="slds-card__body slds-card__body_inner">
+      <!-- Loading Spinner -->
+      <template if:true={isLoading}>
+        <div class="slds-align_absolute-center slds-p-around_medium">
+          <div class="slds-spinner slds-spinner_medium" role="status">
+            <span class="slds-assistive-text">Loading</span>
+            <div class="slds-spinner__dot-a"></div>
+            <div class="slds-spinner__dot-b"></div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Error Display -->
+      <template if:true={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-theme_error"
+          role="alert"
+        >
+          <span class="slds-assistive-text">Error</span>
+          <h2>{error}</h2>
+        </div>
+      </template>
+
+      <!-- Account Info Display -->
+      <template if:true={account}>
+        <div class="account-info-container">
+          <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <div class="account-header">
+                <h3 class="slds-text-heading_medium">{account.Name}</h3>
+                <div class="slds-text-body_small slds-text-color_weak">
+                  {account.Industry}
+                </div>
+              </div>
+
+              <div class="account-details">
+                <div class="detail-item">
+                  <div class="detail-label">Phone</div>
+                  <div class="detail-value">
+                    <lightning-formatted-phone
+                      value={account.Phone}
+                    ></lightning-formatted-phone>
+                  </div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Website</div>
+                  <div class="detail-value">
+                    <lightning-formatted-url
+                      value={account.Website}
+                      target="_blank"
+                    ></lightning-formatted-url>
+                  </div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Annual Revenue</div>
+                  <div class="detail-value">
+                    <lightning-formatted-number
+                      value={account.AnnualRevenue}
+                      format-style="currency"
+                      currency-code="USD"
+                    ></lightning-formatted-number>
+                  </div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Billing Address</div>
+                  <div class="detail-value">
+                    <lightning-formatted-address
+                      street={account.BillingStreet}
+                      city={account.BillingCity}
+                      province={account.BillingState}
+                      postal-code={account.BillingPostalCode}
+                      country={account.BillingCountry}
+                    >
+                    </lightning-formatted-address>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+              <div class="account-metrics">
+                <div class="metric-item">
+                  <div class="metric-value">{contactsCount}</div>
+                  <div class="metric-label">Contacts</div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-value">{account.NumberOfEmployees}</div>
+                  <div class="metric-label">Employees</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contacts Section -->
+        <div class="contacts-section">
+          <h3 class="slds-text-heading_small slds-m-bottom_small">
+            Contacts ({contactsCount})
+          </h3>
+
+          <template if:true={hasContacts}>
+            <div class="contacts-container">
+              <template
+                for:each={account.Contacts.edges}
+                for:item="contactEdge"
+              >
+                <div key={contactEdge.node.Id} class="contact-card">
+                  <div class="contact-avatar">
+                    <lightning-avatar
+                      src=""
+                      fallback-icon-name="standard:contact"
+                      alternative-text={contactEdge.node.Name}
+                      class="avatar"
+                    >
+                    </lightning-avatar>
+                  </div>
+                  <div class="contact-details">
+                    <div class="contact-name">{contactEdge.node.Name}</div>
+                    <div class="contact-title">{contactEdge.node.Title}</div>
+                    <div class="contact-info">
+                      <template if:true={contactEdge.node.Email}>
+                        <div class="contact-email">
+                          <lightning-icon
+                            icon-name="utility:email"
+                            size="xx-small"
+                            class="slds-m-right_xx-small"
+                          ></lightning-icon>
+                          <lightning-formatted-email
+                            value={contactEdge.node.Email}
+                          ></lightning-formatted-email>
+                        </div>
+                      </template>
+                      <template if:true={contactEdge.node.Phone}>
+                        <div class="contact-phone">
+                          <lightning-icon
+                            icon-name="utility:call"
+                            size="xx-small"
+                            class="slds-m-right_xx-small"
+                          ></lightning-icon>
+                          <lightning-formatted-phone
+                            value={contactEdge.node.Phone}
+                          ></lightning-formatted-phone>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <template if:false={hasContacts}>
+            <div class="slds-illustration slds-illustration_small">
+              <div class="slds-text-longform">
+                <p class="slds-text-align_center">
+                  No contacts found for this account.
+                </p>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>

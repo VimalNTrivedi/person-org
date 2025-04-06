@@ -5,9 +5,9 @@ name: Salesforce CI
 # Triggers the workflow on push or pull request events but only for the main branch
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   # This workflow contains a single job called "build"
@@ -38,14 +38,14 @@ jobs:
       - name: Authenticate Dev Hub
         run: |
           # Option 1: Using SFDX_AUTH_URL (Recommended for simplicity if already generated)
-          # echo ${{ secrets.SFDX_AUTH_URL }} > ./SFDX_AUTH_URL.txt
-          # sfdx auth:sfdxurl:store -f ./SFDX_AUTH_URL.txt -a DevHub -d
-          # rm ./SFDX_AUTH_URL.txt
+          echo ${{ secrets.SFDX_AUTH_URL }} > ./SFDX_AUTH_URL.txt
+          sfdx auth:sfdxurl:store -f ./SFDX_AUTH_URL.txt -a DevHub -d
+          rm ./SFDX_AUTH_URL.txt
 
           # Option 2: Using JWT Key components (More secure, key not stored directly)
-          echo ${{ secrets.SFDX_SERVER_KEY }} > ./server.key
-          sfdx auth:jwt:grant --clientid ${{ secrets.SFDX_CLIENT_ID }} --jwtkeyfile ./server.key --username ${{ secrets.SFDX_HUB_USERNAME }} --setdefaultdevhubusername -a DevHub
-          rm ./server.key # Remove the key file after use
+          # echo ${{ secrets.SFDX_SERVER_KEY }} > ./server.key
+          # sfdx auth:jwt:grant --clientid ${{ secrets.SFDX_CLIENT_ID }} --jwtkeyfile ./server.key --username ${{ secrets.SFDX_HUB_USERNAME }} --setdefaultdevhubusername -a DevHub
+          # rm ./server.key # Remove the key file after use
 
       # Validate source code against the Dev Hub (or create/use a scratch org)
       # Option A: Validate against Dev Hub directly (faster, less comprehensive)
